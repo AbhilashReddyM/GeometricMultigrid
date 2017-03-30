@@ -3,7 +3,11 @@ This is an example showing how to call the mgd2d solver.
 """
 import numpy as np
 import time
-from mgd2d import V_cycle,FMG
+from mgd2d import V_cycle
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 #analytical solution
 def Uann(x,y,n):
@@ -14,10 +18,10 @@ def source(x,y,n):
   return -8 * (np.pi)**2 * n**2 * np.sin(2*n*np.pi*x) * np.sin(2*n*np.pi*y)
 
 #input
-max_cycles = 50           #maximum number of V cycles
-nlevels    = 7            #total number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
-NX         = 4*2**(nlevels-1) #Nx and Ny are given as function of grid levels
-NY         = 4*2**(nlevels-1) #
+max_cycles = 10           #maximum numbera of V cycles
+nlevels    = 6            #total number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
+NX         = 2*2**(nlevels-1) #Nx and Ny are given as function of grid levels
+NY         = 2*2**(nlevels-1) #
 tol        = 1e-9      
 
 #the grid has one layer of ghost cells to help apply the boundary conditions
@@ -29,7 +33,6 @@ f   =np.zeros([NX+2,NY+2])#RHS
 DX=1.0/NX
 DY=1.0/NY
 
-n=1.0 # number of waves in the solution
 xc=np.linspace(0.5*DX,1-0.5*DX,NX)
 yc=np.linspace(0.5*DY,1-0.5*DY,NY)
 XX,YY=np.meshgrid(xc,yc,indexing='ij')
@@ -57,5 +60,10 @@ print('Elapsed time: ',time.time()-tb,' seconds')
 error=uann[1:NX+1,1:NY+1]-u[1:NX+1,1:NY+1]
 print('L_inf (true error): ',np.max(np.max(np.abs(error))))
 
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+surf = ax.plot_surface(XX, YY, u[1:NX+1,1:NY+1],cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+plt.show()
 
 

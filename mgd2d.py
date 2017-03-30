@@ -4,6 +4,7 @@ A simple 2D geometric multigrid solver for the homogeneous Dirichlet Poisson pro
 """
 
 import numpy as np
+from scipy.sparse.linalg import LinearOperator
 
 def GSrelax(nx,ny,u,f,iters=1):
   '''
@@ -116,4 +117,27 @@ def FMG(nx,ny,num_levels,f,nv=1,level=1):
     u,res=V_cycle(nx,ny,num_levels-level,u,f)
   return u,res
 
+def MGVP(nx,ny,num_levels):
+  '''
+  Multigrid Preconditioner. Returns a (scipy.sparse) LinearOperator that can
+  be passed to Krylov solvers as a preconditioner. The matrix is not 
+  explicitly needed.  All that is needed is a matrix vector product 
+  In any stationary iterative method, the preconditioner-vector product
+  can be obtained by setting the RHS to the vector and initial guess to 
+  zero and performing one iteration. (Richardson Method)  
+  '''
+  def pc_fn(v):
+
+    u =np.zeros([nx+2,ny+2])
+    f =np.zeros([nx+2,ny+2])
+    f[1:nx+1,1:ny+1] =v.reshape([nx,ny])
+
+    #perform one V cycle
+    u,res=V_cycle(nx,ny,num_levels,u,f)
+
+    return u[1:nx+1,1:ny+1].reshape(v.shape)
+
+  M=LinearOperator((nx*ny,nx*ny), matvec=pc_fn)
+
+  return M
 
