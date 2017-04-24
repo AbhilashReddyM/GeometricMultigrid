@@ -10,19 +10,18 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 #analytical solution
-def Uann(x,y,n):
-  return np.sin(2*n*np.pi*x)*np.sin(2*n*np.pi*y)
-
+def Uann(x,y):
+   return (x**3-x)*(y**3-y)
 #RHS corresponding to above
-def source(x,y,n):
-  return -8 * (np.pi)**2 * n**2 * np.sin(2*n*np.pi*x) * np.sin(2*n*np.pi*y)
+def source(x,y):
+  return 6*x*y*(x**2+ y**2 - 2)
 
 #input
-max_cycles = 10           #maximum numbera of V cycles
-nlevels    = 6            #total number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
+max_cycles = 15   #maximum numbera of V cycles
+nlevels    = 6    #number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
 NX         = 2*2**(nlevels-1) #Nx and Ny are given as function of grid levels
 NY         = 2*2**(nlevels-1) #
-tol        = 1e-9      
+tol        = 1e-10      
 
 #the grid has one layer of ghost cells to help apply the boundary conditions
 uann=np.zeros([NX+2,NY+2])#analytical solution
@@ -37,8 +36,8 @@ xc=np.linspace(0.5*DX,1-0.5*DX,NX)
 yc=np.linspace(0.5*DY,1-0.5*DY,NY)
 XX,YY=np.meshgrid(xc,yc,indexing='ij')
 
-uann[1:NX+1,1:NY+1]=Uann(XX,YY,1)
-f[1:NX+1,1:NY+1]=source(XX,YY,1)
+uann[1:NX+1,1:NY+1]=Uann(XX,YY)
+f[1:NX+1,1:NY+1]   =source(XX,YY)
 
 print('mgd2d.py solver:')
 print('NX:',NX,', NY:',NY,', tol:',tol,'levels: ',nlevels)

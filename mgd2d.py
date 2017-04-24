@@ -6,16 +6,86 @@ A simple 2D geometric multigrid solver for the homogeneous Dirichlet Poisson pro
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 
+def Jacrelax(nx,ny,u,f,iters=1):
+  '''
+  Gauss Seidel smoothing
+  '''
+
+  dx=1.0/nx; dy=1.0/ny
+  Ax=1.0/dx**2; Ay=1.0/dy**2
+  Ap=1.0/(2.0*(Ax+Ay))
+
+  #BCs. Needs to be generalized!
+  u[ 0,:] = -u[ 1,:]
+  u[-1,:] = -u[-2,:]
+  u[:, 0] = -u[:, 1]
+  u[:,-1] = -u[:,-2]
+
+  for it in range(iters):
+    u[1:nx+1,1:ny+1] = 0.8*Ap*(Ax*(u[2:nx+2,1:ny+1] + u[0:nx,1:ny+1])
+                             + Ay*(u[1:nx+1,2:ny+2] + u[1:nx+1,0:ny])
+                             - f[1:nx+1,1:ny+1])+0.2*u[1:nx+1,1:ny+1]
+    #Dirichlet BC
+    u[ 0,:] = -u[ 1,:]
+    u[-1,:] = -u[-2,:]
+    u[:, 0] = -u[:, 1]
+    u[:,-1] = -u[:,-2]
+
+  res=np.zeros([nx+2,ny+2])
+
+  res[1:nx+1,1:ny+1]=f[1:nx+1,1:ny+1]-(( Ax*(u[2:nx+2,1:ny+1]+u[0:nx,1:ny+1])
+                                       + Ay*(u[1:nx+1,2:ny+2]+u[1:nx+1,0:ny])
+                                       - 2.0*(Ax+Ay)*u[1:nx+1,1:ny+1]))
+  return u,res
+
+def SGSrelax(nx,ny,u,f,iters=1):
+  '''
+  Gauss Seidel smoothing
+  '''
+  dx=1.0/nx; dy=1.0/ny
+  Ax=1.0/dx**2; Ay=1.0/dy**2
+  Ap=1.0/(2.0*(Ax+Ay))
+
+  #BCs. Needs to be generalized!
+  u[ 0,:] = -u[ 1,:]
+  u[-1,:] = -u[-2,:]
+  u[:, 0] = -u[:, 1]
+  u[:,-1] = -u[:,-2]
+
+  for it in range(iters):
+    for i in range(1,nx+1):
+     for j in range(1,ny+1):
+         u[i,j]= Ap*( Ax*(u[i+1,j]+u[i-1,j])
+                     +Ay*(u[i,j+1]+u[i,j-1]) - f[i,j])
+    #BCs. Needs to be generalized!
+    u[ 0,:] = -u[ 1,:]
+    u[-1,:] = -u[-2,:]
+    u[:, 0] = -u[:, 1]
+    u[:,-1] = -u[:,-2]
+
+    for i in reversed(range(1,nx+1)):
+     for j in reversed(range(1,ny+1)):
+         u[i,j]= 0.66*(Ap*( Ax*(u[i+1,j]+u[i-1,j])
+                     +Ay*(u[i,j+1]+u[i,j-1]) - f[i,j])) + 0.34*u[i,j]
+    #BCs. Needs to be generalized!
+    u[ 0,:] = -u[ 1,:]
+    u[-1,:] = -u[-2,:]
+    u[:, 0] = -u[:, 1]
+    u[:,-1] = -u[:,-2]
+
+  res=np.zeros([nx+2,ny+2])
+  for i in range(1,nx+1):
+    for j in range(1,ny+1):
+      res[i,j]=f[i,j] - ((Ax*(u[i+1,j]+u[i-1,j])+Ay*(u[i,j+1]+u[i,j-1]) - 2.0*(Ax+Ay)*u[i,j]))
+  return u,res
+
 def GSrelax(nx,ny,u,f,iters=1):
   '''
   Gauss Seidel smoothing
   '''
-  
-  dx=1.0/nx;
-  dy=1.0/ny
+  dx=1.0/nx; dy=1.0/ny
 
-  Ax=1.0/dx**2
-  Ay=1.0/dy**2
+  Ax=1.0/dx**2;  Ay=1.0/dy**2
   Ap=1.0/(2.0*(Ax+Ay))
 
   #BCs. Needs to be generalized!
@@ -31,7 +101,6 @@ def GSrelax(nx,ny,u,f,iters=1):
       for j in range(start,ny+1,2):
          u[i,j]= Ap*( Ax*(u[i+1,j]+u[i-1,j])
                      +Ay*(u[i,j+1]+u[i,j-1]) - f[i,j])
-
     #BCs. Needs to be generalized!
     u[ 0,:] = -u[ 1,:]
     u[-1,:] = -u[-2,:]
@@ -39,9 +108,10 @@ def GSrelax(nx,ny,u,f,iters=1):
     u[:,-1] = -u[:,-2]
 
   res=np.zeros([nx+2,ny+2])
-  for i in range(1,nx+1):
-    for j in range(1,ny+1):
-      res[i,j]=f[i,j] - ((Ax*(u[i+1,j]+u[i-1,j])+Ay*(u[i,j+1]+u[i,j-1]) - 2.0*(Ax+Ay)*u[i,j]))
+
+  res[1:nx+1,1:ny+1]=f[1:nx+1,1:ny+1]-(( Ax*(u[2:nx+2,1:ny+1]+u[0:nx,1:ny+1])
+                                       + Ay*(u[1:nx+1,2:ny+2]+u[1:nx+1,0:ny])
+                                       - 2.0*(Ax+Ay)*u[1:nx+1,1:ny+1]))
   return u,res
 
 def restrict(nx,ny,v):
@@ -49,10 +119,13 @@ def restrict(nx,ny,v):
   restrict 'v' to the coarser grid
   '''
   v_c=np.zeros([nx+2,ny+2])
+
+#  #vecrorized form of 
+#  for i in range(1,nx+1):
+#    for j in range(1,ny+1):
+#      v_c[i,j]=0.25*(v[2*i-1,2*j-1]+v[2*i,2*j-1]+v[2*i-1,2*j]+v[2*i,2*j])
   
-  for i in range(1,nx+1):
-    for j in range(1,ny+1):
-      v_c[i,j]=0.25*(v[2*i-1,2*j-1]+v[2*i,2*j-1]+v[2*i-1,2*j]+v[2*i,2*j])
+  v_c[1:nx+1,1:ny+1]=0.25*(v[1:2*nx:2,1:2*ny:2]+v[1:2*nx:2,2:2*ny+1:2]+v[2:2*nx+1:2,1:2*ny:2]+v[2:2*nx+1:2,2:2*ny+1:2])
 
   return v_c
 
@@ -62,12 +135,18 @@ def prolong(nx,ny,v):
   '''
   v_f=np.zeros([2*nx+2,2*ny+2])
 
-  for i in range(1,nx+1):
-    for j in range(1,ny+1):
-      v_f[2*i-1,2*j-1] = 0.5625*v[i,j]+0.1875*(v[i-1,j]+v[i,j-1])+0.0625*v[i-1,j-1]
-      v_f[2*i  ,2*j-1] = 0.5625*v[i,j]+0.1875*(v[i+1,j]+v[i,j-1])+0.0625*v[i+1,j-1]
-      v_f[2*i-1,2*j  ] = 0.5625*v[i,j]+0.1875*(v[i-1,j]+v[i,j+1])+0.0625*v[i-1,j+1]
-      v_f[2*i  ,2*j  ] = 0.5625*v[i,j]+0.1875*(v[i+1,j]+v[i,j+1])+0.0625*v[i+1,j+1]
+#  #vecrorized form of 
+#  for i in range(1,nx+1):
+#    for j in range(1,ny+1):
+#      v_f[2*i-1,2*j-1] = 0.5625*v[i,j]+0.1875*(v[i-1,j]+v[i,j-1])+0.0625*v[i-1,j-1]
+#      v_f[2*i  ,2*j-1] = 0.5625*v[i,j]+0.1875*(v[i+1,j]+v[i,j-1])+0.0625*v[i+1,j-1]
+#      v_f[2*i-1,2*j  ] = 0.5625*v[i,j]+0.1875*(v[i-1,j]+v[i,j+1])+0.0625*v[i-1,j+1]
+#      v_f[2*i  ,2*j  ] = 0.5625*v[i,j]+0.1875*(v[i+1,j]+v[i,j+1])+0.0625*v[i+1,j+1]
+
+  v_f[1:2*nx:2  ,1:2*ny:2  ] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[0:nx  ,1:ny+1]+v[1:nx+1,0:ny]  )+0.0625*v[0:nx  ,0:ny  ]
+  v_f[2:2*nx+1:2,1:2*ny:2  ] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[2:nx+2,1:ny+1]+v[1:nx+1,0:ny]  )+0.0625*v[2:nx+2,0:ny  ]
+  v_f[1:2*nx:2  ,2:2*ny+1:2] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[0:nx  ,1:ny+1]+v[1:nx+1,2:ny+2])+0.0625*v[0:nx  ,2:ny+2]
+  v_f[2:2*nx+1:2,2:2*ny+1:2] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[2:nx+2,1:ny+1]+v[1:nx+1,2:ny+2])+0.0625*v[2:nx+2,2:ny+2]
 
   return v_f
 
@@ -76,11 +155,11 @@ def V_cycle(nx,ny,num_levels,u,f,level=1):
   V cycle
   '''
   if(level==num_levels):#bottom solve
-    u,res=GSrelax(nx,ny,u,f,iters=50)
+    u,res=Jacrelax(nx,ny,u,f,iters=50)
     return u,res
 
   #Step 1: Relax Au=f on this grid
-  u,res=GSrelax(nx,ny,u,f,iters=1)
+  u,res=Jacrelax(nx,ny,u,f,iters=1)
 
   #Step 2: Restrict residual to coarse grid
   res_c=restrict(nx//2,ny//2,res)
@@ -93,7 +172,7 @@ def V_cycle(nx,ny,num_levels,u,f,level=1):
   u+=prolong(nx//2,ny//2,e_c)
   
   #Step 5: Relax Au=f on this grid
-  u,res=GSrelax(nx,ny,u,f,iters=1)
+  u,res=Jacrelax(nx,ny,u,f,iters=1)
   return u,res
 
 def FMG(nx,ny,num_levels,f,nv=1,level=1):
