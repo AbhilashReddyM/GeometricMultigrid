@@ -37,13 +37,15 @@ def Laplace(nx,ny):
         + Ay*(u[1:nx+1,2:ny+2]+u[1:nx+1,0:ny])
         - 2.0*(Ax+Ay)*u[1:nx+1,1:ny+1])
     return ut.reshape(v.shape)
-  return mv
+  A = LinearOperator((nx*ny,nx*ny), matvec=mv)
+  return A
 
 #input
-nlevels    = 9                #total number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
+nlevels    = 8                #total number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
 NX         = 1*2**(nlevels-1) #Nx and Ny are given as function of grid levels
-NY         = 1*2**(nlevels-1) #
+NY         = 1*2**(nlevels-1) 
 tol        = 1e-10      
+maxiter    = 500
 
 #calcualte the RHS and exact solution
 DX=1.0/NX
@@ -57,13 +59,12 @@ print('Multigrid preconditioned krylov:')
 print('Problem Details:')
 print('NX:',NX,', NY:',NY,', tol:',tol,'MG levels: ',nlevels)
 
-NN=NX*NY
 
 #Laplace Operator
-A = LinearOperator((NN,NN), matvec=Laplace(NX,NY))
+A = Laplace(NX,NY)
 
 #get a random solution and the rhs for this solution by applying the matrix 
-uex=np.random.rand(NN,1)
+uex=np.random.rand(NX*NY,1)
 b=A*uex
 
 #Multigrid Preconditioner
@@ -73,17 +74,17 @@ M=MGVP(NX,NY,nlevels)
 tb=time.time()
 
 #start solving
-u,info,iters=solve_sparse(bicgstab,A,b,tol=1e-10,maxiter=500)
-print('without preconditioning. status:',info,', Iters: ',iters)
-print('Elapsed time: ',time.time()-tb,' seconds')
+u,info,iters=solve_sparse(cg,A,b,tol=tol,maxiter=maxiter)
+print('Without preconditioning. status:',info,', Iters: ',iters)
+print('  Elapsed time: ',time.time()-tb,' seconds')
 error=uex.reshape([NX,NY])-u.reshape([NX,NY])
-print('error :',np.max(np.max(np.abs(error))))
+print('  Error :',np.max(np.max(np.abs(error))))
 
 #start solving
 tb=time.time()
-u,info,iters=solve_sparse(bicgstab,A,b,tol=1e-10,maxiter=500,M=M)
+u,info,iters=solve_sparse(cg,A,b,tol=tol,maxiter=maxiter,M=M)
 print('With preconditioning. status:',info,', Iters: ',iters)
-print('Elapsed time: ',time.time()-tb,' seconds')
+print('  Elapsed time: ',time.time()-tb,' seconds')
 error=uex.reshape([NX,NY])-u.reshape([NX,NY])
-print('error :',np.max(np.max(np.abs(error))))
+print(' Error :',np.max(np.max(np.abs(error))))
 

@@ -8,14 +8,14 @@ from scipy.sparse.linalg import LinearOperator
 
 def Jacrelax(nx,ny,u,f,iters=1):
   '''
-  Gauss Seidel smoothing
+  under-relaxed Jacobi method smoothing
   '''
 
   dx=1.0/nx; dy=1.0/ny
   Ax=1.0/dx**2; Ay=1.0/dy**2
   Ap=1.0/(2.0*(Ax+Ay))
 
-  #BCs. Needs to be generalized!
+  #Dirichlet BC
   u[ 0,:] = -u[ 1,:]
   u[-1,:] = -u[-2,:]
   u[:, 0] = -u[:, 1]

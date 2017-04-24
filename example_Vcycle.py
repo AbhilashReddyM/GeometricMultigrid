@@ -17,10 +17,10 @@ def source(x,y):
   return 6*x*y*(x**2+ y**2 - 2)
 
 #input
-max_cycles = 15   #maximum numbera of V cycles
-nlevels    = 6    #number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
-NX         = 2*2**(nlevels-1) #Nx and Ny are given as function of grid levels
-NY         = 2*2**(nlevels-1) #
+max_cycles = 50   #maximum numbera of V cycles
+nlevels    = 8    #number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
+NX         = 1*2**(nlevels-1) #Nx and Ny are given as function of grid levels
+NY         = 1*2**(nlevels-1) #
 tol        = 1e-10      
 
 #the grid has one layer of ghost cells to help apply the boundary conditions
