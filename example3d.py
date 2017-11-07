@@ -4,7 +4,7 @@ V cycle and Full Multigrid are demonstrated
 """
 import numpy as np
 import time
-from mgd3d import V_cycle,FMG,GSrelax
+from mgd3d_vec import V_cycle,FMG
 
 #analytical solution
 def Uann(x,y,z,n):
@@ -16,10 +16,10 @@ def source(x,y,z,n):
 
 #input
 max_cycles = 20           #maximum number of V cycles
-nlevels    = 5            #total number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
-NX         = 3*2**(nlevels-1) #Nx and Ny are given as function of grid levels
-NY         = 3*2**(nlevels-1) 
-NZ         = 3*2**(nlevels-1) 
+nlevels    = 7            #total number of grid levels. 1 means no multigrid, 2 means one coarse grid. etc 
+NX         = 2*2**(nlevels-1) #Nx and Ny are given as function of grid levels
+NY         = 2*2**(nlevels-1) 
+NZ         = 2*2**(nlevels-1) 
 tol        = 1e-6
 
 #the grid has one layer of ghost cells to help apply the boundary conditions
@@ -59,7 +59,7 @@ for it in range(1,max_cycles+1):
 
 print('Elapsed time: ',time.time()-tb,' seconds')
 
-u,res=FMG(NX,NY,NZ,nlevels,f,1)
+u,res=FMG(NX,NY,NZ,nlevels,f,3)
 
 print('Elapsed time: ',time.time()-tb,' seconds')
 error=uann[1:NX+1,1:NY+1,1:NZ+1]-u[1:NX+1,1:NY+1,1:NZ+1]

@@ -26,8 +26,8 @@ def Jacrelax(level,nx,ny,nz,u,f,iters=1,pre=False):
   u[:,:, 0] = -u[:,:, 1]
   u[:,:,-1] = -u[:,:,-2]
 
-  #if it is a pre-sweep, u is fully zero and only ther f term contributes
-  # we can save some calculation.
+  #if it is a pre-sweep not on the finest grid u is fully zero and only the f term contributes
+  # in the first iteration. This avoids some calculation. Additional iterations are as usual. 
   if(pre and level>1):
     u[1:nx+1,1:ny+1,1:nz+1] = -Ap*f[1:nx+1,1:ny+1,1:nz+1]
     #Dirichlet BC
@@ -52,8 +52,9 @@ def Jacrelax(level,nx,ny,nz,u,f,iters=1,pre=False):
     u[:,:, 0] = -u[:,:, 1]
     u[:,:,-1] = -u[:,:,-2]
 
-  if(not pre):#if it is a post sweep then dont need residual, so return here
-    return u,None
+#if it is a post sweep then dont need residual, so we can return here. We will need residual if it is the post sweep on the fine grid though (to return along with the solution)
+#  if(not pre):
+#    return u,None
 
   res=np.zeros([nx+2,ny+2,nz+2])
   res[1:nx+1,1:ny+1,1:nz+1]=f[1:nx+1,1:ny+1,1:nz+1]-(Ax*(u[2:nx+2,1:ny+1,1:nz+1] + u[0:nx,1:ny+1,1:nz+1])

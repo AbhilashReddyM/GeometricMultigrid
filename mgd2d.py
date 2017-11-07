@@ -42,8 +42,8 @@ def Jacrelax(level,nx,ny,u,f,iters=1,pre=False):
     u[:, 0] = -u[:, 1]
     u[:,-1] = -u[:,-2]
 
-  if(not pre):
-    return u,None
+#  if(not pre):
+#    return u,None
 
   res=np.zeros([nx+2,ny+2])
   res[1:nx+1,1:ny+1]=f[1:nx+1,1:ny+1]-(( Ax*(u[2:nx+2,1:ny+1]+u[0:nx,1:ny+1])
@@ -80,10 +80,12 @@ def prolong(nx,ny,v):
 #      v_f[2*i-1,2*j  ] = 0.5625*v[i,j]+0.1875*(v[i-1,j]+v[i,j+1])+0.0625*v[i-1,j+1]
 #      v_f[2*i  ,2*j  ] = 0.5625*v[i,j]+0.1875*(v[i+1,j]+v[i,j+1])+0.0625*v[i+1,j+1]
 
-  v_f[1:2*nx:2  ,1:2*ny:2  ] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[0:nx  ,1:ny+1]+v[1:nx+1,0:ny]  )+0.0625*v[0:nx  ,0:ny  ]
-  v_f[2:2*nx+1:2,1:2*ny:2  ] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[2:nx+2,1:ny+1]+v[1:nx+1,0:ny]  )+0.0625*v[2:nx+2,0:ny  ]
-  v_f[1:2*nx:2  ,2:2*ny+1:2] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[0:nx  ,1:ny+1]+v[1:nx+1,2:ny+2])+0.0625*v[0:nx  ,2:ny+2]
-  v_f[2:2*nx+1:2,2:2*ny+1:2] = 0.5625*v[1:nx+1,1:ny+1]+0.1875*(v[2:nx+2,1:ny+1]+v[1:nx+1,2:ny+2])+0.0625*v[2:nx+2,2:ny+2]
+  a=0.5625; b=0.1875; c= 0.0625
+
+  v_f[1:2*nx:2  ,1:2*ny:2  ] = a*v[1:nx+1,1:ny+1]+b*(v[0:nx  ,1:ny+1]+v[1:nx+1,0:ny]  )+c*v[0:nx  ,0:ny  ]
+  v_f[2:2*nx+1:2,1:2*ny:2  ] = a*v[1:nx+1,1:ny+1]+b*(v[2:nx+2,1:ny+1]+v[1:nx+1,0:ny]  )+c*v[2:nx+2,0:ny  ]
+  v_f[1:2*nx:2  ,2:2*ny+1:2] = a*v[1:nx+1,1:ny+1]+b*(v[0:nx  ,1:ny+1]+v[1:nx+1,2:ny+2])+c*v[0:nx  ,2:ny+2]
+  v_f[2:2*nx+1:2,2:2*ny+1:2] = a*v[1:nx+1,1:ny+1]+b*(v[2:nx+2,1:ny+1]+v[1:nx+1,2:ny+2])+c*v[2:nx+2,2:ny+2]
 
   return v_f
 
